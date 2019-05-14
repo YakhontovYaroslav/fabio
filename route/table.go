@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -175,21 +176,33 @@ func (t Table) addRoute(d *RouteDef) error {
 	switch {
 	// add new host
 	case t[host] == nil:
-		g, err := glob.Compile(path)
+		g, err := glob.Compile(path, '/')
 		if err != nil {
 			return err
 		}
-		r := &Route{Host: host, Path: path, Glob: g}
+
+		regex, err := regexp.Compile(path)
+		if err != nil {
+			return err
+		}
+
+		r := &Route{Host: host, Path: path, Glob: g, Regex: regex}
 		r.addTarget(d.Service, targetURL, d.Weight, d.Tags, d.Opts)
 		t[host] = Routes{r}
 
 	// add new route to existing host
 	case t[host].find(path) == nil:
-		g, err := glob.Compile(path)
+		g, err := glob.Compile(path, '/')
 		if err != nil {
 			return err
 		}
-		r := &Route{Host: host, Path: path, Glob: g}
+
+		regex, err := regexp.Compile(path)
+		if err != nil {
+			return err
+		}
+
+		r := &Route{Host: host, Path: path, Glob: g, Regex: regex}
 		r.addTarget(d.Service, targetURL, d.Weight, d.Tags, d.Opts)
 		t[host] = append(t[host], r)
 		sort.Sort(t[host])
@@ -383,7 +396,7 @@ func Reverse(s string) string {
 // or nil if there is none. It first checks the routes for the host
 // and if none matches then it falls back to generic routes without
 // a host. This is useful for a catch-all '/' rule.
-func (t Table) Lookup(req *http.Request, trace string, pick picker, match matcher, globDisabled bool) (target *Target) {
+func (t Table) Lookup(req *http.Request, trace string, pick picker, match urlMatcher, globDisabled bool) (target *Target) {
 
 	var hosts []string
 	if trace != "" {
@@ -434,7 +447,7 @@ func (t Table) LookupHost(host string, pick picker) *Target {
 	return t.lookup(host, "/", "", pick, prefixMatcher)
 }
 
-func (t Table) lookup(host, path, trace string, pick picker, match matcher) *Target {
+func (t Table) lookup(host, path, trace string, pick picker, match urlMatcher) *Target {
 	host = strings.ToLower(host) // routes are always added lowercase
 	for _, r := range t[host] {
 		if match(path, r) {

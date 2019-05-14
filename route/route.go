@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,6 +41,8 @@ type Route struct {
 
 	// Glob represents compiled pattern.
 	Glob glob.Glob
+
+	Regex* regexp.Regexp
 }
 
 func (r *Route) addTarget(service string, targetURL *url.URL, fixedWeight float64, tags []string, opts map[string]string) {
@@ -72,6 +75,13 @@ func (r *Route) addTarget(service string, targetURL *url.URL, fixedWeight float6
 
 	if opts != nil {
 		t.StripPath = opts["strip"]
+		if len(t.StripPath) > 0 {
+			t.StripPathRegex, err = regexp.Compile(t.StripPath)
+			if err != nil {
+				t.StripPathRegex = nil
+			}
+		}
+
 		t.TLSSkipVerify = opts["tlsskipverify"] == "true"
 		t.Host = opts["host"]
 		t.ProxyProto = opts["pxyproto"] == "true"

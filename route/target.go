@@ -2,6 +2,7 @@ package route
 
 import (
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/fabiolb/fabio/metrics"
@@ -20,6 +21,7 @@ type Target struct {
 	// StripPath will be removed from the front of the outgoing
 	// request path
 	StripPath string
+	StripPathRegex* regexp.Regexp
 
 	// TLSSkipVerify disables certificate validation for upstream
 	// TLS connections.

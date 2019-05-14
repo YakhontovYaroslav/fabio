@@ -153,7 +153,7 @@ func (g GrpcProxyInterceptor) lookup(ctx context.Context, fullMethodName string)
 		Header: headers,
 	}
 
-	return route.GetTable().Lookup(req, req.Header.Get("trace"), pick, match, g.Config.GlobMatchingDisabled), nil
+	return route.GetTable().Lookup(req, req.Header.Get("trace"), pick, match.UrlMatcher, g.Config.GlobMatchingDisabled), nil
 }
 
 type GrpcStatsHandler struct {

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/fabiolb/fabio/auth"
@@ -45,6 +44,8 @@ type HTTPProxy struct {
 	// The proxy will panic if this value is nil.
 	Lookup func(*http.Request) *route.Target
 
+	PathStripper func(path string, t *route.Target) string
+
 	// Requests is a timer metric which is updated for every request.
 	Requests metrics.Timer
 
@@ -69,6 +70,10 @@ type HTTPProxy struct {
 func (p *HTTPProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if p.Lookup == nil {
 		panic("no lookup function")
+	}
+
+	if p.PathStripper == nil {
+		panic("no path stripper function")
 	}
 
 	if p.Config.RequestID != "" {
@@ -126,11 +131,16 @@ func (p *HTTPProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fullPath := r.URL.Path
+	if len(t.URL.Path) > 0 {
+		fullPath = fullPath + t.URL.Path
+	}
+
 	// build the real target url that is passed to the proxy
 	targetURL := &url.URL{
 		Scheme: t.URL.Scheme,
 		Host:   t.URL.Host,
-		Path:   r.URL.Path,
+		Path:   fullPath,
 	}
 	if t.URL.RawQuery == "" || r.URL.RawQuery == "" {
 		targetURL.RawQuery = t.URL.RawQuery + r.URL.RawQuery
@@ -144,18 +154,7 @@ func (p *HTTPProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		r.Host = t.Host
 	}
 
-	// TODO(fs): The HasPrefix check seems redundant since the lookup function should
-	// TODO(fs): have found the target based on the prefix but there may be other
-	// TODO(fs): matchers which may have different rules. I'll keep this for
-	// TODO(fs): a defensive approach.
-	if t.StripPath != "" && strings.HasPrefix(r.URL.Path, t.StripPath) {
-		targetURL.Path = targetURL.Path[len(t.StripPath):]
-		// ensure absolute path after stripping to maintain compliance with
-		// section 5.3 of RFC7230 (https://tools.ietf.org/html/rfc7230#section-5.3)
-		if !strings.HasPrefix(targetURL.Path, "/") {
-			targetURL.Path = "/" + targetURL.Path
-		}
-	}
+	targetURL.Path = p.PathStripper(targetURL.Path, t)
 
 	if err := addHeaders(r, p.Config, t.StripPath); err != nil {
 		http.Error(w, "cannot parse "+r.RemoteAddr, http.StatusInternalServerError)
