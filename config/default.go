@@ -39,8 +39,8 @@ var defaultConfig = &Config{
 	Proxy: Proxy{
 		MaxConn:             10000,
 		Strategy:            "rnd",
-		Matcher:             "prefix",
-		NoRouteStatus:       404,
+		Matcher:             "regex",
+		NoRouteStatus:       666,
 		DialTimeout:         30 * time.Second,
 		FlushInterval:       time.Second,
 		GlobalFlushInterval: 0,
@@ -48,7 +48,25 @@ var defaultConfig = &Config{
 		AuthSchemes:         map[string]AuthScheme{},
 	},
 	Registry: Registry{
-		Backend: "consul",
+		Backend: "r1",
+		R1: R1{
+			Addr:                                "localhost:8500",
+			Scheme:                              "http",
+			KVPath:                              "/fabio/config",
+			NoRouteHTMLPath:                     "/fabio/noroute.html",
+			Tag:                                 "sd",
+			Env:                                 "prod",
+			Register:                            true,
+			ServiceAddr:                         ":9998",
+			ServiceName:                         "fabio",
+			ServiceStatus:                       []string{"passing"},
+			ServiceMonitors:                     1,
+			CheckInterval:                       time.Second,
+			CheckTimeout:                        3 * time.Second,
+			CheckScheme:                         "http",
+			CheckDeregisterCriticalServiceAfter: "90m",
+			ChecksRequired:                      "one",
+		},
 		Consul: Consul{
 			Addr:                                "localhost:8500",
 			Scheme:                              "http",
@@ -89,7 +107,7 @@ var defaultConfig = &Config{
 			Proto: "http",
 		},
 		Color:  "light-green",
-		Access: "rw",
+		Access: "ro",
 	},
 
 	Tracing: Tracing{

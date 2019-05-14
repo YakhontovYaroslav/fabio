@@ -29,6 +29,7 @@ import (
 	"github.com/fabiolb/fabio/proxy/tcp"
 	"github.com/fabiolb/fabio/registry"
 	"github.com/fabiolb/fabio/registry/consul"
+	"github.com/fabiolb/fabio/registry/r1"
 	"github.com/fabiolb/fabio/registry/custom"
 	"github.com/fabiolb/fabio/registry/file"
 	"github.com/fabiolb/fabio/registry/static"
@@ -403,6 +404,8 @@ func initBackend(cfg *config.Config) {
 			registry.Default, err = static.NewBackend(&cfg.Registry.Static)
 		case "consul":
 			registry.Default, err = consul.NewBackend(&cfg.Registry.Consul)
+		case "r1":
+			registry.Default, err = r1.NewBackend(&cfg.Registry.R1)
 		case "custom":
 			registry.Default, err = custom.NewBackend(&cfg.Registry.Custom)
 		default:

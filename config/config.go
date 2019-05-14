@@ -118,6 +118,7 @@ type Registry struct {
 	Static  Static
 	File    File
 	Consul  Consul
+	R1      R1
 	Custom  Custom
 	Timeout time.Duration
 	Retry   time.Duration
@@ -140,6 +141,29 @@ type Consul struct {
 	KVPath                              string
 	NoRouteHTMLPath                     string
 	TagPrefix                           string
+	Register                            bool
+	ServiceAddr                         string
+	ServiceName                         string
+	ServiceTags                         []string
+	ServiceStatus                       []string
+	CheckInterval                       time.Duration
+	CheckTimeout                        time.Duration
+	CheckScheme                         string
+	CheckTLSSkipVerify                  bool
+	CheckDeregisterCriticalServiceAfter string
+	ChecksRequired                      string
+	ServiceMonitors                     int
+	TLS                                 ConsulTlS
+}
+
+type R1 struct {
+	Addr                                string
+	Scheme                              string
+	Token                               string
+	KVPath                              string
+	NoRouteHTMLPath                     string
+	Tag                                 string
+	Env                                 string
 	Register                            bool
 	ServiceAddr                         string
 	ServiceName                         string

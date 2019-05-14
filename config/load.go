@@ -215,6 +215,29 @@ func load(cmdline, environ, envprefix []string, props *properties.Properties) (c
 	f.StringVar(&cfg.Registry.Custom.Path, "registry.custom.path", defaultConfig.Registry.Custom.Path, "custom back end path in the URL")
 	f.StringVar(&cfg.Registry.Custom.QueryParams, "registry.custom.queryparams", defaultConfig.Registry.Custom.QueryParams, "custom back end query parameters in the URL")
 
+	f.StringVar(&cfg.Registry.R1.Addr, "registry.r1.addr", defaultConfig.Registry.R1.Addr, "address of the consul agent")
+	f.StringVar(&cfg.Registry.R1.Token, "registry.r1.token", defaultConfig.Registry.R1.Token, "token for consul agent")
+	f.StringVar(&cfg.Registry.R1.KVPath, "registry.r1.kvpath", defaultConfig.Registry.R1.KVPath, "consul KV path for manual overrides")
+	f.StringVar(&cfg.Registry.R1.NoRouteHTMLPath, "registry.r1.noroutehtmlpath", defaultConfig.Registry.R1.NoRouteHTMLPath, "consul KV path for HTML returned when no route is found")
+	f.StringVar(&cfg.Registry.R1.Tag, "registry.r1.tag", defaultConfig.Registry.R1.Tag, "tag for discoverable services")
+	f.StringVar(&cfg.Registry.R1.Env, "registry.r1.env", defaultConfig.Registry.R1.Env, "serving environment")
+	f.StringVar(&cfg.Registry.R1.TLS.KeyFile, "registry.r1.tls.keyfile", defaultConfig.Registry.R1.TLS.KeyFile, "path to consul key file")
+	f.StringVar(&cfg.Registry.R1.TLS.CertFile, "registry.r1.tls.certfile", defaultConfig.Registry.R1.TLS.CertFile, "path to consul cert file")
+	f.StringVar(&cfg.Registry.R1.TLS.CAFile, "registry.r1.tls.cafile", defaultConfig.Registry.R1.TLS.CAFile, "path to consul CA file")
+	f.StringVar(&cfg.Registry.R1.TLS.CAPath, "registry.r1.tls.capath", defaultConfig.Registry.R1.TLS.CAPath, "path to consul CA directory")
+	f.BoolVar(&cfg.Registry.R1.TLS.InsecureSkipVerify, "registry.r1.tls.insecureskipverify", defaultConfig.Registry.R1.TLS.InsecureSkipVerify, "is tls check enabled")
+	f.BoolVar(&cfg.Registry.R1.Register, "registry.r1.register.enabled", defaultConfig.Registry.R1.Register, "register fabio in consul")
+	f.StringVar(&cfg.Registry.R1.ServiceAddr, "registry.r1.register.addr", defaultConfig.Registry.R1.ServiceAddr, "service registration address")
+	f.StringVar(&cfg.Registry.R1.ServiceName, "registry.r1.register.name", defaultConfig.Registry.R1.ServiceName, "service registration name")
+	f.StringSliceVar(&cfg.Registry.R1.ServiceTags, "registry.r1.register.tags", defaultConfig.Registry.R1.ServiceTags, "service registration tags")
+	f.StringSliceVar(&cfg.Registry.R1.ServiceStatus, "registry.r1.service.status", defaultConfig.Registry.R1.ServiceStatus, "valid service status values")
+	f.DurationVar(&cfg.Registry.R1.CheckInterval, "registry.r1.register.checkInterval", defaultConfig.Registry.R1.CheckInterval, "service check interval")
+	f.DurationVar(&cfg.Registry.R1.CheckTimeout, "registry.r1.register.checkTimeout", defaultConfig.Registry.R1.CheckTimeout, "service check timeout")
+	f.BoolVar(&cfg.Registry.R1.CheckTLSSkipVerify, "registry.r1.register.checkTLSSkipVerify", defaultConfig.Registry.R1.CheckTLSSkipVerify, "service check TLS verification")
+	f.StringVar(&cfg.Registry.R1.CheckDeregisterCriticalServiceAfter, "registry.r1.register.checkDeregisterCriticalServiceAfter", defaultConfig.Registry.R1.CheckDeregisterCriticalServiceAfter, "critical service deregistration timeout")
+	f.StringVar(&cfg.Registry.R1.ChecksRequired, "registry.r1.checksRequired", defaultConfig.Registry.R1.ChecksRequired, "number of checks which must pass: one or all")
+	f.IntVar(&cfg.Registry.R1.ServiceMonitors, "registry.r1.serviceMonitors", defaultConfig.Registry.R1.ServiceMonitors, "concurrency for route updates")
+
 	// deprecated flags
 	var proxyLogRoutes string
 	f.StringVar(&proxyLogRoutes, "proxy.log.routes", "", "deprecated. use log.routes.format instead")
@@ -287,6 +310,15 @@ func load(cmdline, environ, envprefix []string, props *properties.Properties) (c
 		cfg.Registry.Consul.ServiceMonitors = 1
 	}
 
+	cfg.Registry.R1.CheckScheme = defaultConfig.Registry.R1.CheckScheme
+	if cfg.UI.Listen.CertSource.Name != "" {
+		cfg.Registry.R1.CheckScheme = "https"
+	}
+
+	if cfg.Registry.R1.ServiceMonitors <= 0 {
+		cfg.Registry.R1.ServiceMonitors = 1
+	}
+
 	if gzipContentTypesValue != "" {
 		cfg.Proxy.GZIPContentTypes, err = regexp.Compile(gzipContentTypesValue)
 		if err != nil {
@@ -298,7 +330,7 @@ func load(cmdline, environ, envprefix []string, props *properties.Properties) (c
 		return nil, fmt.Errorf("invalid proxy.strategy: %s", cfg.Proxy.Strategy)
 	}
 
-	if cfg.Proxy.Matcher != "prefix" && cfg.Proxy.Matcher != "glob" && cfg.Proxy.Matcher != "iprefix" {
+	if cfg.Proxy.Matcher != "prefix" && cfg.Proxy.Matcher != "glob" && cfg.Proxy.Matcher != "iprefix" && cfg.Proxy.Matcher != "regex" {
 		return nil, fmt.Errorf("invalid proxy.matcher: %s", cfg.Proxy.Matcher)
 	}
 
