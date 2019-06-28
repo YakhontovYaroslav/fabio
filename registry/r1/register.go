@@ -1,7 +1,6 @@
 package r1
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -91,28 +90,18 @@ func serviceRegistration(cfg *config.R1, serviceName string) (*api.AgentServiceR
 		return nil, err
 	}
 
-	ip := net.ParseIP(ipstr)
-	if ip == nil {
-		ip, err = config.LocalIP()
-		if err != nil {
-			return nil, err
-		}
-		if ip == nil {
-			return nil, errors.New("no local ip")
-		}
+	if len(ipstr) > 0 {
+		hostname = ipstr
 	}
 
 	serviceID := fmt.Sprintf("%s-%s-%d", serviceName, hostname, port)
 
-	checkURL := fmt.Sprintf("%s://%s:%d/health", cfg.CheckScheme, ip, port)
-	if ip.To16() != nil {
-		checkURL = fmt.Sprintf("%s://[%s]:%d/health", cfg.CheckScheme, ip, port)
-	}
+	checkURL := fmt.Sprintf("%s://%s:%d/health", cfg.CheckScheme, hostname, port)
 
 	service := &api.AgentServiceRegistration{
 		ID:      serviceID,
 		Name:    serviceName,
-		Address: ip.String(),
+		Address: hostname,
 		Port:    port,
 		Tags:    cfg.ServiceTags,
 		Check: &api.AgentServiceCheck{

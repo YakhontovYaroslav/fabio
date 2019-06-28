@@ -23,6 +23,7 @@ var defaultConfig = &Config{
 	ProfilePath: os.TempDir(),
 	Log: Log{
 		AccessFormat: "common",
+		AccessTarget: "stdout",
 		RoutesFormat: "delta",
 		Level:        "INFO",
 	},
