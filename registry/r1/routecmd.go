@@ -48,7 +48,7 @@ func (r routecmd) build() []string {
 	}
 
 	for _, t := range r.svc.ServiceTags {
-		if len(env) < 1 || len(scheme) < 1 {
+		if len(env) < 1 {
 			meta := ServiceMetadata {}
 
 			err := json.Unmarshal([]byte(t), &meta)
@@ -60,8 +60,12 @@ func (r routecmd) build() []string {
 		}
 	}
 
-	if len(env) < 1 || len(scheme) < 1 {
+	if len(env) < 1 {
 		return config
+	}
+
+	if len(scheme) < 1 {
+		scheme = "http"
 	}
 
 	if env == r.discoveryEnv {

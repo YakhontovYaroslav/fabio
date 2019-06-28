@@ -156,11 +156,8 @@ func (p *HTTPProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	targetURL.Path = p.PathStripper(targetURL.Path, t)
-	hostPort := strings.Split(targetURL.Host, ":")
 
-	r.Header.Set("R1-Service-Host", hostPort[0])
-	r.Header.Set("R1-Service-Port", hostPort[1])
-	r.Header.Set("R1-Service-Path", targetURL.Path)
+	r.Header.Set("R1-Service-Host", strings.Split(targetURL.Host, ":")[0])
 
 	if err := addHeaders(r, p.Config, t.StripPath); err != nil {
 		http.Error(w, "cannot parse "+r.RemoteAddr, http.StatusInternalServerError)
