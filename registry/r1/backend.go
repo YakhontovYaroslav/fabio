@@ -133,7 +133,6 @@ func (b *be) WriteManual(path string, value string, version uint64) (ok bool, er
 
 func (b *be) WatchServices() chan string {
 	log.Printf("[INFO] consul: Using dynamic routes")
-	log.Printf("[INFO] consul: Using tag %q", b.cfg.Tag)
 
 	m := NewServiceMonitor(b.c, b.cfg, b.dc)
 	svc := make(chan string)

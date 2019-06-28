@@ -162,7 +162,6 @@ type R1 struct {
 	Token                               string
 	KVPath                              string
 	NoRouteHTMLPath                     string
-	Tag                                 string
 	Env                                 string
 	Register                            bool
 	ServiceAddr                         string

@@ -126,7 +126,6 @@ func (w *ServiceMonitor) serviceConfig(name string, passing map[string]bool) (co
 			svc:    svc,
 			env:    env,
 			discoveryEnv: w.config.Env,
-			tag: w.config.Tag,
 		}
 		cmds := r.build()
 

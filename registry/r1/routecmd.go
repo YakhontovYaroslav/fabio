@@ -1,6 +1,7 @@
 package r1
 
 import (
+	"encoding/json"
 	"net"
 	"runtime"
 	"strconv"
@@ -14,39 +15,31 @@ type routecmd struct {
 	// svc is the consul service instance.
 	svc *api.CatalogService
 
-	tag string
-
 	discoveryEnv string
 
 	env map[string]string
 }
 
+type ServiceMetadata struct {
+	App string
+	Environment string
+	Label string
+	BasePath string
+	Scheme string
+}
+
 func (r routecmd) build() []string {
 	// generate route commands
-	var config, svctags []string
-	var discoverable, glob = false, false
-	var discoveryKey, env, baseEnv, scheme, basePath string
+	var config []string
+	var glob = false
+	var discoveryKey, env, scheme, basePath string
 
-	for _, t := range r.svc.ServiceTags {
-		if t == r.tag {
-			discoverable = true
-		} else {
-			svctags = append(svctags, t)
-		}
-	}
-
-	if !discoverable {
-		return config
-	}
+	discoveryKey = r.svc.ServiceName
 
 	for key, value := range r.svc.ServiceMeta {
 		switch key {
-		case "DiscoveryKey":
-			discoveryKey = value
-		case "Env":
+		case "Environment":
 			env = value
-		case "BaseEnv":
-			baseEnv = value
 		case "Scheme":
 			scheme = value
 		case "BasePath":
@@ -54,13 +47,25 @@ func (r routecmd) build() []string {
 		}
 	}
 
-	if len(baseEnv) < 1 {
-		baseEnv = env
-		glob = true
+	for _, t := range r.svc.ServiceTags {
+		if len(env) < 1 || len(scheme) < 1 {
+			meta := ServiceMetadata {}
+
+			err := json.Unmarshal([]byte(t), &meta)
+			if err == nil {
+				env = meta.Environment
+				scheme = meta.Scheme
+				basePath = meta.BasePath
+			}
+		}
 	}
 
-	if baseEnv != r.discoveryEnv {
+	if len(env) < 1 || len(scheme) < 1 {
 		return config
+	}
+
+	if env == r.discoveryEnv {
+		glob = true
 	}
 
 	name, addr, port := r.svc.ServiceName, r.svc.ServiceAddress, r.svc.ServicePort
@@ -88,7 +93,6 @@ func (r routecmd) build() []string {
 		dst = dst + basePath + "/"
 	}
 
-	var weight string
 	var ropts []string
 
 	ropts = append(ropts, "strip=" + src)
@@ -96,12 +100,7 @@ func (r routecmd) build() []string {
 	ropts = append(ropts, "proto=" + scheme)
 
 	cfg := "route add " + name + " " + src + " " + dst
-	if weight != "" {
-		cfg += " weight " + weight
-	}
-	if len(svctags) > 0 {
-		cfg += " tags " + strconv.Quote(strings.Join(svctags, ","))
-	}
+
 	if len(ropts) > 0 {
 		cfg += " opts " + strconv.Quote(strings.Join(ropts, " "))
 	}
