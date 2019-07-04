@@ -469,10 +469,11 @@ func watchBackend(cfg *config.Config, first chan bool) {
 			next.WriteString(svccfg)
 			next.WriteString("\n")
 			next.WriteString(mancfg)
-			if next.String() == last {
+			newCfg := next.String()
+			if newCfg == last {
 				continue
 			}
-			aliases, err := route.ParseAliases(next.String())
+			aliases, err := route.ParseAliases(newCfg)
 			if err != nil {
 				log.Printf("[WARN]: %s", err)
 			}
@@ -484,8 +485,8 @@ func watchBackend(cfg *config.Config, first chan bool) {
 				continue
 			}
 			route.SetTable(t)
-			logRoutes(t, last, next.String(), cfg.Log.RoutesFormat)
-			last = next.String()
+			logRoutes(t, last, newCfg, cfg.Log.RoutesFormat)
+			last = newCfg
 			once.Do(func() { close(first) })
 		}
 	}
@@ -515,6 +516,7 @@ func logRoutes(t route.Table, last, next, format string) {
 			if t == "" {
 				continue
 			}
+
 			switch d.Type {
 			case dmp.DiffDelete:
 				b.WriteString("- ")

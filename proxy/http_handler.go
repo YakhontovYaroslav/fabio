@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -14,6 +15,8 @@ func newHTTPProxy(target *url.URL, tr http.RoundTripper, flush time.Duration) ht
 		// mangle the request and target URL since the target
 		// URL is already in the correct format.
 		Director: func(req *http.Request) {
+			req.Host = target.Host
+
 			req.URL.Scheme = target.Scheme
 			req.URL.Host = target.Host
 			req.URL.Path = target.Path
@@ -22,6 +25,8 @@ func newHTTPProxy(target *url.URL, tr http.RoundTripper, flush time.Duration) ht
 				// explicitly disable User-Agent so it's not set to default value
 				req.Header.Set("User-Agent", "")
 			}
+
+			req.Header.Set("Host", strings.Split(target.Host, ":")[0])
 		},
 		FlushInterval: flush,
 		Transport:     tr,
